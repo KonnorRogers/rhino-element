@@ -1,0 +1,38 @@
+{
+  "name": "rhino-components",
+  "version": "0.0.2",
+  "type": "module",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "types": "src/types.d.ts",
+  "scripts": {
+    "test": "web-test-runner",
+    "start": "web-dev-server --node-resolve --open --watch"
+  },
+  "keywords": [
+    "webcomponents",
+    "ssr"
+  ],
+  "license": "MIT",
+  "repository": "git@github.com:KonnorRogers/rhino-components.git",
+  "bugs": {
+    "url": "https://github.com/KonnorRogers/rhino-components/issues"
+  },
+  "homepage": "https://github.com/KonnorRogers/rhino-components",
+  "author": "KonnorRogers <konnor5456@gmail.com>",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "liquidjs": "^10.7.0",
+    "morphdom": "^2.7.0"
+  },
+  "devDependencies": {
+    "@open-wc/testing": "^3.1.7",
+    "@web/dev-server": "^0.1.36",
+    "@web/dev-server-esbuild": "^0.3.4",
+    "@web/test-runner": "^0.15.1",
+    "@web/test-runner-playwright": "^0.9.0",
+    "lit": "^2.7.0"
+  }
+}
