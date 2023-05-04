@@ -5,10 +5,10 @@ import { LiquidEngine }  from "./liquid-engine.js"
  *   class MyElement extends RhinoElement {
  *     static baseName = "my-element"
  *     static properties = {
- *       value: { attribute: true, default: "1" }
- *       name: { attribute: true }
+ *       value: { reflect: true, default: "1" }
+ *       name: { reflect: true }
  *       id: {
- *         attribute: true
+ *         reflect: true
  *         onChange(prev, current) {
  *           console.log({ element: this, prev, current })
  *         }
@@ -35,7 +35,7 @@ export class RhinoElement extends HTMLElement {
 
     if (properties == null || properties.length <= 0) return []
 
-    return Object.keys(properties).filter((propName) => properties[propName].attribute === true);
+    return Object.keys(properties).filter((propName) => properties[propName].attribute || properties[propName].reflect === true);
   }
 
   /** @type {CustomElementRegistry} */
@@ -113,8 +113,8 @@ export class RhinoElement extends HTMLElement {
 
           this[`__${propertyName}__`] = val;
 
-					if (propertyObject.attribute === true) {
-          	this.setAttribute(propertyName, val);
+					if (propertyObject.attribute || propertyObject.reflect === true) {
+          	this.setAttribute(propertyObject.attribute || propertyName, val);
           }
         }
       };
@@ -126,7 +126,6 @@ export class RhinoElement extends HTMLElement {
 
   connectedCallback () {
 		let shadow = null
-
 
     try {
     	const internals = this.attachInternals()
@@ -161,15 +160,15 @@ export class RhinoElement extends HTMLElement {
     const engine = LiquidEngine.start()
 
     const properties = {}
-    Object.keys(this.constructor.properties).forEach((property) => {
-      properties[property] = this[property]
+    Object.entries(this.constructor.properties).forEach(([property, obj]) => {
+      properties[obj.attribute || property] = this[property]
     })
 
     const [
       shadowDOM,
       // lightDOM
     ] = await Promise.allSettled([
-      engine.parseAndRender(this.constructor.shadowDOM, properties),
+        engine.parseAndRender(this.constructor.shadowDOM, { attributes: properties }),
       // engine.parseAndRender(this.constructor.lightDOM, properties)
     ])
 
@@ -185,10 +184,12 @@ export class RhinoElement extends HTMLElement {
       // lightDOM
     } = await this.compile()
 
-    this.shadowRoot.innerHTML = shadowDOM.value
+    const el = document.createElement("div")
+    el.innerHTML = shadowDOM.value
+    morphdom(this.shadowRoot, el)
+    // this.shadowRoot.innerHTML = shadowDOM.value
 
-    // Morphdom doesnt seem to like operating in the shadow root....will investigate later.
-    // morphdom(this.shadowRoot, shadowDOM.value)
+    // el.innerHTML = lightDOM.value
     // morphdom(this.firstElementSibling, lightDOM)
   }
 
@@ -199,22 +200,22 @@ export class RhinoElement extends HTMLElement {
   // async requestUpdate() {
   //   if (!this.updateRequested) {
   //     this.updateRequested = true;
-  //     this.updateRequested = await false;
+  //     this.updateRequested = new Promise((resolve) => resolve(false));
   //     this.update();
   //     this.__resolve();
   //     this.updateComplete = this.__createDeferredPromise();
   //   }
   // }
 
-  // update() {
-  //   this.render()
-  // }
-
-  __createDeferredPromise() {
-    return new Promise((resolve) => {
-      this.__resolve = resolve;
-    });
+  update() {
+    this.render()
   }
+
+  // __createDeferredPromise() {
+  //   return new Promise((resolve) => {
+  //     this.__resolve = resolve;
+  //   });
+  // }
 }
 
 /** @type {import("../types").toAnonymousClass} */

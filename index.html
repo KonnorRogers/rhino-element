@@ -4,9 +4,42 @@
     <title>SSR Web Components</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script type="module" src="./src/index.js"></script>
+    <script type="module">
+      import { RhinoElement } from "./src/index.js"
+      export class Button extends RhinoElement {
+        static baseName = "test-button"
+        static properties = {
+          type: { reflect: true, default: "button" },
+          value: { reflect: true },
+          appearance: { reflect: true }
+        }
+        static shadowDOM = `
+          <style>
+            button {
+              background-color: rebeccapurple;
+              color: white;
+            }
+
+            button[appearance="primary"] {
+              background-color: green;
+            }
+          </style>
+
+          <button
+            {%- for attribute in attributes %}
+              {{ attribute[0] }}="{{ attribute[1] }}"
+            {%- endfor %}
+          >
+            <slot></slot>
+          </button>
+        `
+      }
+      Button.define("rhino-button")
+    </script>
   </head>
   <body>
-    <rhino-button>Hello from SSR land</rhino-button>
+    <rhino-button type="button">
+      Hello from SSR land
+    </rhino-button>
   </body>
 </html>
