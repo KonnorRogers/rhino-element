@@ -1,4 +1,4 @@
-import { assert, fixture, html } from '@open-wc/testing';
+import { assert, aTimeout, fixture, html } from '@open-wc/testing';
 import { RhinoElement } from "./rhino-element.js";
 
 export class Button extends RhinoElement {
@@ -55,6 +55,7 @@ test("Should update attribute when property changes", async () => {
   Button.define()
   const el = await fixture(html`<test-button value="2">Hi there</test-button>`)
   el.value = 4
+  await el.updateComplete
   assert.equal(el.getAttribute("value"), "4")
 
 })
@@ -63,8 +64,8 @@ test("Should update property when attribute changes", async () => {
   Button.define()
   const el = await fixture(html`<test-button value="2">Hi there</test-button>`)
   el.setAttribute("value", "4")
+  await el.updateComplete
   assert.equal(el.value, "4")
-
 })
 
 test("Should compile with proper inner attributes", async () => {

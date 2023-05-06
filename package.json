@@ -24,6 +24,7 @@
     "access": "public"
   },
   "dependencies": {
+    "@lit/reactive-element": "^1.6.1",
     "liquidjs": "^10.7.0",
     "morphdom": "^2.7.0"
   },

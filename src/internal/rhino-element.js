@@ -1,3 +1,4 @@
+import { ReactiveElement } from "@lit/reactive-element";
 import morphdom from "morphdom";
 import { LiquidEngine }  from "./liquid-engine.js"
 /**
@@ -28,16 +29,7 @@ import { LiquidEngine }  from "./liquid-engine.js"
  *   MyElement.define("my-element-3", null, { <RegistrationOptions> }) // Registers with additional options.
  *
  */
-export class RhinoElement extends HTMLElement {
-	/** @type {string[]} */
-  static get observedAttributes() {
-    const properties = this.properties
-
-    if (properties == null || properties.length <= 0) return []
-
-    return Object.keys(properties).filter((propName) => properties[propName].attribute || properties[propName].reflect === true);
-  }
-
+export class RhinoElement extends ReactiveElement {
   /** @type {CustomElementRegistry} */
   static customElementRegistry = window.customElements
 
@@ -67,6 +59,22 @@ export class RhinoElement extends HTMLElement {
     this.customElementRegistry.define(name, toAnonymousClass(ctor), options)
   }
 
+  static toTemplate () {
+    let styles = ""
+    const toStyleTag = (str) => `<style>${str}</style>`
+
+    if (Array.isArray(this.styles)) {
+      styles = this.styles.map((style) => toStyleTag(style)).join("\n")
+    } else if (this.styles) {
+      styles = toStyleTag(this.styles)
+    }
+
+    return `<template shadowrootmode="open">
+      ${styles}
+      ${this.shadowDOM}
+    </template>`
+  }
+
 
 	/**
 	 * @param {string} name - Property name
@@ -87,66 +95,11 @@ export class RhinoElement extends HTMLElement {
   constructor() {
     super();
 
-    // this.updateComplete = this.__createDeferredPromise();
-
-    const properties = this.constructor.properties
-
-    if (this.constructor.finalized) {
-      this.setDefaultProperties()
-		  return
-    }
-
-    this.constructor.finalized = true
-
-    // Add reactive properties
-    const obj = {}
-    for (const [propertyName, propertyObject] of Object.entries(properties)) {
-      obj[propertyName] = {
-        get() {
-          return this[`__${propertyName}__`];
-        },
-        set(val) {
-        	// Do equality check. Perhaps we could add a hook here?
-          if (this[propertyName] === val) {
-            return;
-          }
-
-          this[`__${propertyName}__`] = val;
-
-					if (propertyObject.attribute || propertyObject.reflect === true) {
-          	this.setAttribute(propertyObject.attribute || propertyName, val);
-          }
-        }
-      };
-    }
-
     this.setDefaultProperties()
-    Object.defineProperties(this.constructor.prototype, obj);
   }
 
   connectedCallback () {
-		let shadow = null
-
-    try {
-    	const internals = this.attachInternals()
-			shadow = internals.shadowRoot;
-    } catch (_e) {
-    	// no-op
-    } finally {
-    	if (shadow == null) {
-      	this.attachShadow({
-        	mode: 'open'
-      	});
-      }
-    }
-
-    const properties = this.constructor.properties
-    Object.keys(properties).forEach((propName) => {
-      this[propName] = this.getAttribute(propName)
-    })
-
-    // Do we need to "await" this?
-    this.render()
+    super.connectedCallback()
   }
 
   setDefaultProperties () {
@@ -159,18 +112,21 @@ export class RhinoElement extends HTMLElement {
   async compile () {
     const engine = LiquidEngine.start()
 
-    const properties = {}
+    const attributes = {}
     Object.entries(this.constructor.properties).forEach(([property, obj]) => {
-      properties[obj.attribute || property] = this[property]
+      attributes[obj.attribute || property] = this[property]
     })
 
     const [
       shadowDOM,
       // lightDOM
     ] = await Promise.allSettled([
-        engine.parseAndRender(this.constructor.shadowDOM, { attributes: properties }),
-      // engine.parseAndRender(this.constructor.lightDOM, properties)
+        this.constructor.shadowDOM ? engine.parseAndRender(this.constructor.shadowDOM, { attributes }) : "",
+        // this.constructor.lightDOM ? engine.parseAndRender(this.constructor.lightDOM, { attributes }) : ""
     ])
+
+    this.__shadowDOM = shadowDOM.value
+    // this.__lightDOM = lightDOM.value + "\n" + this.innerHTML
 
     return {
       shadowDOM,
@@ -178,44 +134,24 @@ export class RhinoElement extends HTMLElement {
     }
   }
 
-  async render () {
-    const {
-      shadowDOM,
-      // lightDOM
-    } = await this.compile()
+  update(changedProperties) {
+    // Setting properties in `render` should not trigger an update. Since
+    // updates are allowed after super.update, it's important to call `render`
+    // before that.
+    super.update(changedProperties);
+    let el = document.createElement("div")
+    el.innerHTML = this.__shadowDOM
+    morphdom(this.shadowRoot, el, { childrenOnly: true })
 
-    const el = document.createElement("div")
-    el.innerHTML = shadowDOM.value
-    morphdom(this.shadowRoot, el)
-    // this.shadowRoot.innerHTML = shadowDOM.value
-
-    // el.innerHTML = lightDOM.value
-    // morphdom(this.firstElementSibling, lightDOM)
+    // el = document.createElement("div")
+    // el.innerHTML = this.__lightDOM
+    // morphdom(this, el, { childrenOnly: true })
   }
 
-  get __finalized__ () {
-    return false
+  async scheduleUpdate() {
+    await this.compile()
+    super.scheduleUpdate()
   }
-
-  // async requestUpdate() {
-  //   if (!this.updateRequested) {
-  //     this.updateRequested = true;
-  //     this.updateRequested = new Promise((resolve) => resolve(false));
-  //     this.update();
-  //     this.__resolve();
-  //     this.updateComplete = this.__createDeferredPromise();
-  //   }
-  // }
-
-  update() {
-    this.render()
-  }
-
-  // __createDeferredPromise() {
-  //   return new Promise((resolve) => {
-  //     this.__resolve = resolve;
-  //   });
-  // }
 }
 
 /** @type {import("../types").toAnonymousClass} */
