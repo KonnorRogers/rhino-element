@@ -1,6 +1,7 @@
 lockfileVersion: 5.4
 
 specifiers:
+  '@lit/reactive-element': ^1.6.1
   '@open-wc/testing': ^3.1.7
   '@web/dev-server': ^0.1.36
   '@web/dev-server-esbuild': ^0.3.4
@@ -11,6 +12,7 @@ specifiers:
   morphdom: ^2.7.0
 
 dependencies:
+  '@lit/reactive-element': 1.6.1
   liquidjs: 10.7.0
   morphdom: 2.7.0
 
@@ -267,13 +269,11 @@ packages:
 
   /@lit-labs/ssr-dom-shim/1.1.0:
     resolution: {integrity: sha512-92uQ5ARf7UXYrzaFcAX3T2rTvaS9Z1//ukV+DqjACM4c8s0ZBQd7ayJU5Dh2AFLD/Ayuyz4uMmxQec8q3U4Ong==}
-    dev: true
 
   /@lit/reactive-element/1.6.1:
     resolution: {integrity: sha512-va15kYZr7KZNNPZdxONGQzpUr+4sxVu7V/VG7a8mRfPPXUyhEYj5RzXCQmGrlP3tAh0L3HHm5AjBMFYRqlM9SA==}
     dependencies:
       '@lit-labs/ssr-dom-shim': 1.1.0
-    dev: true
 
   /@mdn/browser-compat-data/4.2.1:
     resolution: {integrity: sha512-EWUguj2kd7ldmrF9F+vI5hUOralPd+sdsUnYbRy33vZTuZkduC1shE9TtEMEjAQwyfyMb4ole5KtjF8MsnQOlA==}

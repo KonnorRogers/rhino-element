@@ -31,6 +31,7 @@
             {%- endfor %}
           >
             <slot></slot>
+            <span>{{ attributes.value }}</span>
           </button>
         `
       }
@@ -38,7 +39,7 @@
     </script>
   </head>
   <body>
-    <rhino-button type="button">
+    <rhino-button type="button" value="4">
       Hello from SSR land
     </rhino-button>
   </body>
