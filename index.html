@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script type="module">
       import { RhinoElement } from "./src/index.js"
+      import { css } from "@lit/reactive-element"
       export class Button extends RhinoElement {
         static baseName = "test-button"
         static properties = {
@@ -13,8 +14,18 @@
           value: { reflect: true },
           appearance: { reflect: true }
         }
-        static shadowDOM = `
-          <style>
+        // static lightDOM = `
+        //   <button
+        //     {%- for attribute in attributes %}
+        //       {{ attribute[0] }}="{{ attribute[1] }}"
+        //     {%- endfor %}
+        //   >
+        //     Fallback Button
+        //   </button>
+        // `
+        static styles = [
+          css`button { background-color: tomato }`,
+          css`
             button {
               background-color: rebeccapurple;
               color: white;
@@ -22,9 +33,9 @@
 
             button[appearance="primary"] {
               background-color: green;
-            }
-          </style>
-
+            }`
+        ]
+        static shadowDOM = `
           <button
             {%- for attribute in attributes %}
               {{ attribute[0] }}="{{ attribute[1] }}"

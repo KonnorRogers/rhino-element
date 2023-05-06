@@ -59,6 +59,22 @@ export class RhinoElement extends ReactiveElement {
     this.customElementRegistry.define(name, toAnonymousClass(ctor), options)
   }
 
+  static toTemplate () {
+    let styles = ""
+    const toStyleTag = (str) => `<style>${str}</style>`
+
+    if (Array.isArray(this.styles)) {
+      styles = this.styles.map((style) => toStyleTag(style)).join("\n")
+    } else if (this.styles) {
+      styles = toStyleTag(this.styles)
+    }
+
+    return `<template shadowrootmode="open">
+      ${styles}
+      ${this.shadowDOM}
+    </template>`
+  }
+
 
 	/**
 	 * @param {string} name - Property name
@@ -82,6 +98,10 @@ export class RhinoElement extends ReactiveElement {
     this.setDefaultProperties()
   }
 
+  connectedCallback () {
+    super.connectedCallback()
+  }
+
   setDefaultProperties () {
     const properties = this.constructor.properties
     for (const [propertyName, propertyObject] of Object.entries(properties)) {
@@ -101,9 +121,12 @@ export class RhinoElement extends ReactiveElement {
       shadowDOM,
       // lightDOM
     ] = await Promise.allSettled([
-        engine.parseAndRender(this.constructor.shadowDOM, { attributes }),
-      // engine.parseAndRender(this.constructor.lightDOM, properties)
+        this.constructor.shadowDOM ? engine.parseAndRender(this.constructor.shadowDOM, { attributes }) : "",
+        // this.constructor.lightDOM ? engine.parseAndRender(this.constructor.lightDOM, { attributes }) : ""
     ])
+
+    this.__shadowDOM = shadowDOM.value
+    // this.__lightDOM = lightDOM.value + "\n" + this.innerHTML
 
     return {
       shadowDOM,
@@ -111,31 +134,22 @@ export class RhinoElement extends ReactiveElement {
     }
   }
 
-  async render () {
-    const {
-      shadowDOM,
-      // lightDOM
-    } = await this.compile()
-
-    this.__shadowDOM = shadowDOM
-    // this.shadowRoot.innerHTML = shadowDOM.value
-
-    // el.innerHTML = lightDOM.value
-    // morphdom(this.firstElementSibling, lightDOM)
-  }
-
   update(changedProperties) {
     // Setting properties in `render` should not trigger an update. Since
     // updates are allowed after super.update, it's important to call `render`
     // before that.
-    const el = document.createElement("div")
-    el.innerHTML = this.__shadowDOM.value
-    morphdom(this.shadowRoot, el)
     super.update(changedProperties);
+    let el = document.createElement("div")
+    el.innerHTML = this.__shadowDOM
+    morphdom(this.shadowRoot, el, { childrenOnly: true })
+
+    // el = document.createElement("div")
+    // el.innerHTML = this.__lightDOM
+    // morphdom(this, el, { childrenOnly: true })
   }
 
   async scheduleUpdate() {
-    await this.render()
+    await this.compile()
     super.scheduleUpdate()
   }
 }
