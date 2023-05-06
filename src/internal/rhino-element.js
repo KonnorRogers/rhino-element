@@ -117,10 +117,7 @@ export class RhinoElement extends ReactiveElement {
       // lightDOM
     } = await this.compile()
 
-    const el = document.createElement("div")
-    el.innerHTML = shadowDOM.value
-
-    morphdom(this.shadowRoot, el)
+    this.__shadowDOM = shadowDOM
     // this.shadowRoot.innerHTML = shadowDOM.value
 
     // el.innerHTML = lightDOM.value
@@ -131,8 +128,15 @@ export class RhinoElement extends ReactiveElement {
     // Setting properties in `render` should not trigger an update. Since
     // updates are allowed after super.update, it's important to call `render`
     // before that.
-    this.render();
+    const el = document.createElement("div")
+    el.innerHTML = this.__shadowDOM.value
+    morphdom(this.shadowRoot, el)
     super.update(changedProperties);
+  }
+
+  async scheduleUpdate() {
+    await this.render()
+    super.scheduleUpdate()
   }
 }
 

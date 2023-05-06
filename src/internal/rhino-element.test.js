@@ -40,7 +40,6 @@ test("Should set attributes on initial run", async () => {
 test("Should set attributes if element defined before JS", async () => {
   const el = await fixture(html`<test-button value="1">Hi there</test-button>`)
   Button.define()
-  await el.updateComplete
   assert.equal(el.value, "1")
 
 })
@@ -48,7 +47,6 @@ test("Should set attributes if element defined before JS", async () => {
 test("Should set default values", async () => {
   const el = await fixture(html`<test-button value="1">Hi there</test-button>`)
   Button.define()
-  await el.updateComplete
   assert.equal(el.type, "button")
 
 })
@@ -68,11 +66,9 @@ test("Should update property when attribute changes", async () => {
   el.setAttribute("value", "4")
   await el.updateComplete
   assert.equal(el.value, "4")
-
 })
 
 test("Should compile with proper inner attributes", async () => {
   const el = await fixture(html`<test-button type="button">Button</test-button>`)
-  await aTimeout(0)
   assert.equal(el.getAttribute("type"), el.shadowRoot.querySelector("button").getAttribute("type"))
 })
