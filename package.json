@@ -1,5 +1,5 @@
 {
-  "name": "rhino-components",
+  "name": "rhino-element",
   "version": "0.0.2",
   "type": "module",
   "main": "src/index.js",
@@ -9,16 +9,20 @@
     "test": "web-test-runner",
     "start": "web-dev-server --node-resolve --open --watch"
   },
+  "files": [
+    "src"
+  ],
   "keywords": [
     "webcomponents",
-    "ssr"
+    "ssr",
+    "liquid"
   ],
   "license": "MIT",
-  "repository": "git@github.com:KonnorRogers/rhino-components.git",
+  "repository": "git@github.com:KonnorRogers/rhino-element.git",
   "bugs": {
-    "url": "https://github.com/KonnorRogers/rhino-components/issues"
+    "url": "https://github.com/KonnorRogers/rhino-element/issues"
   },
-  "homepage": "https://github.com/KonnorRogers/rhino-components",
+  "homepage": "https://github.com/KonnorRogers/rhino-element",
   "author": "KonnorRogers <konnor5456@gmail.com>",
   "publishConfig": {
     "access": "public"
