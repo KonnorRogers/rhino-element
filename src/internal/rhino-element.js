@@ -59,6 +59,7 @@ export class RhinoElement extends ReactiveElement {
     this.customElementRegistry.define(name, toAnonymousClass(ctor), options)
   }
 
+
   static toTemplate () {
     let styles = ""
     const toStyleTag = (str) => `<style>${str}</style>`
@@ -98,10 +99,6 @@ export class RhinoElement extends ReactiveElement {
     this.setDefaultProperties()
   }
 
-  connectedCallback () {
-    super.connectedCallback()
-  }
-
   setDefaultProperties () {
     const properties = this.constructor.properties
     for (const [propertyName, propertyObject] of Object.entries(properties)) {
@@ -109,43 +106,42 @@ export class RhinoElement extends ReactiveElement {
     }
   }
 
-  async compile () {
-    const engine = LiquidEngine.start()
-
+  get attributesObject () {
     const attributes = {}
     Object.entries(this.constructor.properties).forEach(([property, obj]) => {
       attributes[obj.attribute || property] = this[property]
     })
 
-    const [
-      shadowDOM,
-      // lightDOM
-    ] = await Promise.allSettled([
-        this.constructor.shadowDOM ? engine.parseAndRender(this.constructor.shadowDOM, { attributes }) : "",
-        // this.constructor.lightDOM ? engine.parseAndRender(this.constructor.lightDOM, { attributes }) : ""
-    ])
-
-    this.__shadowDOM = shadowDOM.value
-    // this.__lightDOM = lightDOM.value + "\n" + this.innerHTML
-
-    return {
-      shadowDOM,
-      // lightDOM
-    }
+    return attributes
   }
+
+  async compile () {
+    const engine = LiquidEngine.start()
+
+    let shadowDOM = ""
+
+    if (this.constructor.shadowDOM) {
+      shadowDOM = await engine.parseAndRender(this.constructor.shadowDOM, { attributes: this.attributesObject })
+    }
+
+    this.__template__ = shadowDOM
+  }
+
+  __render () {
+    let el = document.createElement("div")
+    el.innerHTML = this.__template__
+    morphdom(this.shadowRoot, el, { childrenOnly: true })
+  }
+
+  render () {}
 
   update(changedProperties) {
     // Setting properties in `render` should not trigger an update. Since
     // updates are allowed after super.update, it's important to call `render`
     // before that.
+    this.__render()
+    this.render()
     super.update(changedProperties);
-    let el = document.createElement("div")
-    el.innerHTML = this.__shadowDOM
-    morphdom(this.shadowRoot, el, { childrenOnly: true })
-
-    // el = document.createElement("div")
-    // el.innerHTML = this.__lightDOM
-    // morphdom(this, el, { childrenOnly: true })
   }
 
   async scheduleUpdate() {
