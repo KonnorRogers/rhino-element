@@ -1,6 +1,7 @@
-import { ReactiveElement } from "@lit/reactive-element";
+import { ReactiveElement, supportsAdoptingStyleSheets } from "@lit/reactive-element";
 import morphdom from "morphdom";
 import { LiquidEngine }  from "./liquid-engine.js"
+
 /**
  * @example
  *   class MyElement extends RhinoElement {
@@ -61,19 +62,41 @@ export class RhinoElement extends ReactiveElement {
 
 
   static toTemplate () {
-    let styles = ""
-    const toStyleTag = (str) => `<style>${str}</style>`
-
-    if (Array.isArray(this.styles)) {
-      styles = this.styles.map((style) => toStyleTag(style)).join("\n")
-    } else if (this.styles) {
-      styles = toStyleTag(this.styles)
-    }
 
     return `<template shadowrootmode="open">
-      ${styles}
-      ${this.shadowDOM}
-    </template>`
+${this.styleTags.map(tag => tag.outerHTML).join("\n")}
+${this.shadowDOM}
+</template>`
+  }
+
+  static get styleTags () {
+    let styles = []
+    let global
+
+    if (typeof window === "undefined") {
+      global = window
+    } else if (typeof globalThis !== "undefined") {
+      global = globalThis
+    }
+
+    const nonce = global['litNonce'];
+
+    const toStyleTag = (str) => {
+      const style = document.createElement('style');
+      if (nonce !== undefined) {
+        style.setAttribute('nonce', nonce);
+      }
+      style.textContent = str
+      return style
+    }
+
+    if (Array.isArray(this.styles)) {
+      this.styles.forEach((style) => styles.push(toStyleTag(style.cssText)))
+    } else if (this.styles) {
+      styles.push(toStyleTag(this.styles.cssText))
+    }
+
+    return styles
   }
 
 
@@ -124,12 +147,20 @@ export class RhinoElement extends ReactiveElement {
       shadowDOM = await engine.parseAndRender(this.constructor.shadowDOM, { attributes: this.attributesObject })
     }
 
-    this.__template__ = shadowDOM
+    this.__shadowDOM__ = shadowDOM
   }
 
   __render () {
     let el = document.createElement("div")
-    el.innerHTML = this.__template__
+
+    // Safari Fix.
+    if (!supportsAdoptingStyleSheets) {
+      this.constructor.styleTags.forEach((style) => { el.appendChild(style) })
+    }
+
+    const template = document.createElement("template")
+    template.innerHTML = this.__shadowDOM__
+    el.append(template.cloneNode(true).content)
     morphdom(this.shadowRoot, el, { childrenOnly: true })
   }
 
